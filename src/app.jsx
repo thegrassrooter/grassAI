@@ -4,7 +4,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
-import Login from "./Login";
+import Login from "./login";
 
 const BACKEND_URL =
   "https://script.google.com/macros/s/AKfycbxpJ7bm8l-WmKg0oBX2DVgR8kU8DxlwtooJbBxpINkf3mqiEv0mQbySJcz5jWhc1SYpDw/exec";
