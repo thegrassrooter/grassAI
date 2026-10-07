@@ -86,10 +86,6 @@ function createTitle(text) {
   return title || "New chat";
 }
 
-function getSubscriptionStorageKey(userId) {
-  return `grassAI_subscription_${userId}`;
-}
-
 function getThemeStorageKey(userId) {
   return `grassAI_theme_${userId}`;
 }
@@ -102,50 +98,27 @@ function getDefaultSubscription() {
   };
 }
 
-function normalizeSubscription(saved) {
-  const fallback = getDefaultSubscription();
+function getServerSubscriptionTier(value) {
+  const raw =
+    typeof value === "object" && value
+      ? value.tier ?? value.subscription
+      : value;
 
-  if (!saved || typeof saved !== "object") {
-    return fallback;
-  }
+  const normalized = String(raw ?? "")
+    .trim()
+    .toLowerCase();
 
-  let tier = saved.tier;
-
-  if (
-    tier === "pro" ||
-    tier === "procode" ||
-    tier === "premium"
-  ) {
-    tier = "premium";
-  } else {
-    tier = "default";
-  }
-
-  const allowedModels =
-    MODEL_ACCESS[tier] || fallback.unlockedModels;
-
-  const selectedModel = allowedModels.includes(
-    saved.selectedModel
-  )
-    ? saved.selectedModel
-    : allowedModels[allowedModels.length - 1];
-
-  return {
-    tier,
-    unlockedModels: allowedModels,
-    selectedModel,
-  };
+  return normalized === "premium" ||
+    normalized === "pro" ||
+    normalized === "procode"
+    ? "premium"
+    : "default";
 }
 
 function subscriptionFromServer(value, previous) {
-  const tier =
-    value === "premium" ? "premium" : "default";
-
-  const allowedModels =
-    MODEL_ACCESS[tier];
-
-  const previousSelected =
-    previous?.selectedModel;
+  const tier = getServerSubscriptionTier(value);
+  const allowedModels = MODEL_ACCESS[tier] || MODEL_ACCESS.default;
+  const previousSelected = previous?.selectedModel;
 
   const selectedModel =
     allowedModels.includes(previousSelected)
@@ -215,7 +188,6 @@ function App() {
   const [adminError, setAdminError] = useState("");
   const [adminMessage, setAdminMessage] = useState("");
 
-  const subscriptionLoadedRef = useRef(false);
   const subscriptionSyncRef = useRef(false);
 
   /*
@@ -332,73 +304,12 @@ function App() {
    * =========================
    */
 
-  useEffect(() => {
-    if (!user?.id) {
-      subscriptionLoadedRef.current = false;
-      return;
-    }
-
-    subscriptionLoadedRef.current = false;
-
-    const storageKey =
-      getSubscriptionStorageKey(user.id);
-
-    const saved =
-      localStorage.getItem(storageKey);
-
-    if (!saved) {
-      setSubscription(
-        getDefaultSubscription()
-      );
-
-      subscriptionLoadedRef.current = true;
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(saved);
-
-      setSubscription(
-        normalizeSubscription(parsed)
-      );
-    } catch (error) {
-      console.error(
-        "Could not load saved subscription:",
-        error
-      );
-
-      setSubscription(
-        getDefaultSubscription()
-      );
-    }
-
-    subscriptionLoadedRef.current = true;
-  }, [user]);
-
-  useEffect(() => {
-    if (
-      !user?.id ||
-      !subscriptionLoadedRef.current
-    ) {
-      return;
-    }
-
-    const storageKey =
-      getSubscriptionStorageKey(user.id);
-
-    localStorage.setItem(
-      storageKey,
-      JSON.stringify(
-        normalizeSubscription(subscription)
-      )
-    );
-  }, [subscription, user]);
-
   /*
    * Server subscription is the source of truth.
    *
-   * This prevents localStorage from being able
-   * to unlock grass2 after Premium is revoked.
+   * Subscription state is intentionally NOT stored in localStorage.
+   * This prevents stale local data from overriding the account's
+   * actual Premium status returned by the backend.
    */
   async function refreshServerSubscription(
     showErrors = false
@@ -489,7 +400,7 @@ function App() {
       .finally(() => {
         subscriptionSyncRef.current = false;
       });
-  }, [settingsOpen]);
+  }, [settingsOpen, credential]);
 
   /*
    * =========================
@@ -693,7 +604,7 @@ function App() {
         const syncedSubscription =
           subscriptionFromServer(
             subscriptionData.subscription,
-            subscription
+            getDefaultSubscription()
           );
 
         setSubscription(
@@ -979,15 +890,12 @@ function App() {
    */
   async function redeemPromoCode() {
     const normalized =
-      promoCode
-        .trim()
-        .toUpperCase();
+      promoCode.trim().toUpperCase();
 
     if (!normalized) {
       setPromoMessage(
         "Please enter a promo code."
       );
-
       return;
     }
 
@@ -995,7 +903,6 @@ function App() {
       setPromoMessage(
         "Please sign in again before redeeming a promo code."
       );
-
       return;
     }
 
@@ -1004,20 +911,41 @@ function App() {
     );
 
     try {
-      const data =
+      await postBackend(
+        "redeemPromo",
+        {
+          credential,
+          code: normalized,
+        }
+      );
+
+      /*
+       * Do not trust the redeem response alone.
+       * Immediately ask the backend for the persisted
+       * account state and use that as the UI source of truth.
+       */
+      const confirmed =
         await postBackend(
-          "redeemPromo",
+          "getSubscription",
           {
             credential,
-            code:
-              normalized,
           }
         );
 
+      const confirmedTier =
+        getServerSubscriptionTier(
+          confirmed.subscription
+        );
+
+      if (confirmedTier !== "premium") {
+        throw new Error(
+          "The promo code was accepted, but the account is still showing Free on the server. Please check the backend subscription record."
+        );
+      }
+
       const nextSubscription =
         subscriptionFromServer(
-          data.subscription ||
-            "premium",
+          confirmed.subscription,
           subscription
         );
 
@@ -1031,8 +959,11 @@ function App() {
             ? {
                 ...current,
                 subscription:
-                  data.subscription ||
-                  "premium",
+                  confirmed.subscription,
+                isAdmin:
+                  Boolean(
+                    confirmed.isAdmin
+                  ),
               }
             : current
       );
@@ -1164,37 +1095,40 @@ function App() {
   }
 
   async function selectModel(model) {
-    /*
-     * Re-check the server before allowing
-     * Premium model selection.
-     */
+    if (!MODEL_ACCESS.premium.includes(model) &&
+        !MODEL_ACCESS.default.includes(model)) {
+      return;
+    }
+
     if (model === "grass2") {
       const latest =
         await refreshServerSubscription(
           true
         );
 
+      const latestState =
+        latest
+          ? subscriptionFromServer(
+              latest.subscription,
+              subscription
+            )
+          : null;
+
       if (
-        latest?.subscription !==
-        "premium"
+        !latestState ||
+        latestState.tier !== "premium"
       ) {
+        setSubscription(
+          getDefaultSubscription()
+        );
         setSubscriptionOpen(true);
         return;
       }
-    }
 
-    if (
-      !subscription.unlockedModels.includes(
-        model
-      )
-    ) {
-      if (
-        model === "grass2"
-      ) {
-        setSubscriptionOpen(
-          true
-        );
-      }
+      setSubscription({
+        ...latestState,
+        selectedModel: "grass2",
+      });
 
       return;
     }
@@ -1202,17 +1136,12 @@ function App() {
     setSubscription(
       (current) => ({
         ...current,
-        selectedModel:
-          model,
+        selectedModel: "grass1",
       })
     );
 
-    if (
-      model === "grass1"
-    ) {
-      setAttachments([]);
-      setAttachmentError("");
-    }
+    setAttachments([]);
+    setAttachmentError("");
   }
 
   function setThemeMode(
@@ -1602,7 +1531,14 @@ function App() {
     /*
      * grass2 must always be verified by the
      * server before a new request is sent.
+     *
+     * Keep a local requestSubscription variable so
+     * this function never relies on React state that
+     * has not updated yet.
      */
+    let requestSubscription =
+      subscription;
+
     if (
       subscription.selectedModel ===
       "grass2"
@@ -1612,29 +1548,34 @@ function App() {
 
       if (
         !latest ||
-        latest.subscription !==
-          "premium"
+        getServerSubscriptionTier(
+          latest.subscription
+        ) !== "premium"
       ) {
-        setSubscription(
-          getDefaultSubscription()
-        );
+        const fallback =
+          getDefaultSubscription();
 
+        setSubscription(fallback);
         setAttachments([]);
-        setAttachmentError(
-          ""
-        );
-
-        setSubscriptionOpen(
-          true
-        );
-
+        setAttachmentError("");
+        setSubscriptionOpen(true);
         return;
       }
+
+      requestSubscription =
+        subscriptionFromServer(
+          latest.subscription,
+          subscription
+        );
+
+      setSubscription(
+        requestSubscription
+      );
     }
 
     if (
       hasAttachments &&
-      subscription.selectedModel !==
+      requestSubscription.selectedModel !==
         "grass2"
     ) {
       setAttachments([]);
@@ -1647,7 +1588,7 @@ function App() {
 
     if (
       hasAttachments &&
-      !subscription.unlockedModels.includes(
+      !requestSubscription.unlockedModels.includes(
         "grass2"
       )
     ) {
@@ -1805,7 +1746,7 @@ function App() {
             credential,
 
             model:
-              subscription.selectedModel,
+              requestSubscription.selectedModel,
 
             ...(attachmentSnapshot.length >
             0
