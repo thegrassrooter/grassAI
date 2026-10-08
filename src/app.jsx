@@ -1094,41 +1094,47 @@ function App() {
     );
   }
 
-  async function selectModel(model) {
-    if (!MODEL_ACCESS.premium.includes(model) &&
-        !MODEL_ACCESS.default.includes(model)) {
+  /*
+   * =========================
+   * MODEL SELECTION
+   * =========================
+   *
+   * Model switching is intentionally local and instant.
+   *
+   * The backend remains the final authority when a chat
+   * request is actually sent. This avoids blocking the UI
+   * on an extra subscription request every time the user
+   * clicks grass2.
+   */
+  function selectModel(model) {
+    if (
+      !MODEL_ACCESS.premium.includes(model) &&
+      !MODEL_ACCESS.default.includes(model)
+    ) {
       return;
     }
 
     if (model === "grass2") {
-      const latest =
-        await refreshServerSubscription(
-          true
-        );
-
-      const latestState =
-        latest
-          ? subscriptionFromServer(
-              latest.subscription,
-              subscription
-            )
-          : null;
-
       if (
-        !latestState ||
-        latestState.tier !== "premium"
+        !subscription.unlockedModels.includes(
+          "grass2"
+        )
       ) {
-        setSubscription(
-          getDefaultSubscription()
-        );
         setSubscriptionOpen(true);
+
+        /*
+         * Refresh in the background rather than blocking
+         * the model selector.
+         */
+        refreshServerSubscription(true);
+
         return;
       }
 
-      setSubscription({
-        ...latestState,
+      setSubscription((current) => ({
+        ...current,
         selectedModel: "grass2",
-      });
+      }));
 
       return;
     }
@@ -1529,49 +1535,17 @@ function App() {
     }
 
     /*
-     * grass2 must always be verified by the
-     * server before a new request is sent.
+     * Use the current local subscription state immediately.
      *
-     * Keep a local requestSubscription variable so
-     * this function never relies on React state that
-     * has not updated yet.
+     * The backend remains the final authority and will reject
+     * grass2 if Premium access has actually been revoked.
+     *
+     * This removes an extra subscription network request from
+     * every grass2 message, so the user's message can appear
+     * immediately and the thinking indicator can start instantly.
      */
-    let requestSubscription =
+    const requestSubscription =
       subscription;
-
-    if (
-      subscription.selectedModel ===
-      "grass2"
-    ) {
-      const latest =
-        await refreshServerSubscription();
-
-      if (
-        !latest ||
-        getServerSubscriptionTier(
-          latest.subscription
-        ) !== "premium"
-      ) {
-        const fallback =
-          getDefaultSubscription();
-
-        setSubscription(fallback);
-        setAttachments([]);
-        setAttachmentError("");
-        setSubscriptionOpen(true);
-        return;
-      }
-
-      requestSubscription =
-        subscriptionFromServer(
-          latest.subscription,
-          subscription
-        );
-
-      setSubscription(
-        requestSubscription
-      );
-    }
 
     if (
       hasAttachments &&
@@ -1718,6 +1692,10 @@ function App() {
       );
     }
 
+    /*
+     * Update the UI BEFORE making the backend request.
+     * This means the user's message appears immediately.
+     */
     setConversations(
       conversationsBeforeAI
     );
@@ -1809,7 +1787,13 @@ function App() {
         finalConversations
       );
 
-      await saveConversations(
+      /*
+       * Save in the background.
+       *
+       * The UI no longer waits for cloud storage to finish
+       * before finishing the response flow.
+       */
+      saveConversations(
         finalConversations
       );
     } catch (error) {
@@ -1822,6 +1806,9 @@ function App() {
        * If the backend rejects grass2 because
        * Premium was revoked, immediately sync
        * the UI back to the free plan.
+       *
+       * This refresh is only performed after an actual
+       * backend rejection, not before every message.
        */
       if (
         error.message &&
@@ -1834,11 +1821,7 @@ function App() {
             .includes("grass2")
         )
       ) {
-        try {
-          await refreshServerSubscription();
-        } catch {
-          // Keep the original error message.
-        }
+        refreshServerSubscription();
       }
 
       const errorMessage = {
@@ -1887,7 +1870,10 @@ function App() {
         finalConversations
       );
 
-      await saveConversations(
+      /*
+       * Save the error state in the background too.
+       */
+      saveConversations(
         finalConversations
       );
     } finally {

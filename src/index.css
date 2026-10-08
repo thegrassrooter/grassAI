@@ -7224,3 +7224,351 @@ button.attachment-button * {
     justify-content: space-between;
   }
 }
+
+/* Email authentication */
+
+.login-card form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-card form input {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.login-card input:disabled,
+.login-card button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-button {
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.login-button:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+.signup-text button {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.signup-text button:disabled {
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   grassAI DARK MODE PATCH
+   Add this at the VERY BOTTOM of the CSS file.
+   ========================================================= */
+
+html[data-theme="dark"],
+html[data-theme="dark"] body {
+  background: #0f1115;
+  color: #f5f7fa;
+}
+
+html[data-theme="dark"] body {
+  margin: 0;
+}
+
+/* Main app background */
+html[data-theme="dark"] .app,
+html[data-theme="dark"] .app.theme-dark {
+  background: #0f1115;
+  color: #f5f7fa;
+}
+
+/* Top bar */
+html[data-theme="dark"] .topbar {
+  background: rgba(20, 23, 29, 0.82);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f5f7fa;
+}
+
+/* Sidebar */
+html[data-theme="dark"] .sidebar {
+  background: rgba(18, 21, 27, 0.92);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f5f7fa;
+}
+
+/* Main chat area */
+html[data-theme="dark"] .main-content,
+html[data-theme="dark"] .chat-area {
+  background: #0f1115;
+  color: #f5f7fa;
+}
+
+/* Brand + general text */
+html[data-theme="dark"] .brand-name,
+html[data-theme="dark"] .account,
+html[data-theme="dark"] .sidebar-section-title,
+html[data-theme="dark"] .conversation-title,
+html[data-theme="dark"] .settings-label,
+html[data-theme="dark"] .settings-selector-subtitle,
+html[data-theme="dark"] .settings-header h2,
+html[data-theme="dark"] .settings-header p,
+html[data-theme="dark"] .welcome h1,
+html[data-theme="dark"] .welcome p {
+  color: #f5f7fa;
+}
+
+/* Conversation items */
+html[data-theme="dark"] .conversation-item {
+  background: transparent;
+  color: #f5f7fa;
+}
+
+html[data-theme="dark"] .conversation-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme="dark"] .conversation-active {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+/* Sidebar buttons */
+html[data-theme="dark"] .sidebar-toggle,
+html[data-theme="dark"] .settings-button,
+html[data-theme="dark"] .sidebar-settings-button,
+html[data-theme="dark"] .conversation-actions button {
+  color: #f5f7fa;
+}
+
+/* Chat input container */
+html[data-theme="dark"] .chat-input {
+  background: rgba(25, 28, 35, 0.88);
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.35);
+}
+
+/* THE WHITE TEXT BOX */
+html[data-theme="dark"] .chat-input input {
+  background: transparent;
+  color: #f5f7fa;
+  border-color: transparent;
+  outline: none;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .chat-input input::placeholder {
+  color: rgba(245, 247, 250, 0.48);
+}
+
+/* Prevent browser autofill from turning inputs white */
+html[data-theme="dark"] input,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] select {
+  color-scheme: dark;
+}
+
+/* Settings overlay */
+html[data-theme="dark"] .settings-overlay,
+html[data-theme="dark"] .dialog-overlay {
+  background: rgba(0, 0, 0, 0.62);
+}
+
+/* Settings panel */
+html[data-theme="dark"] .settings-panel,
+html[data-theme="dark"] .subscription-panel,
+html[data-theme="dark"] .dialog-card {
+  background: #181b22;
+  color: #f5f7fa;
+  border-color: rgba(255, 255, 255, 0.09);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+}
+
+/* Settings cards */
+html[data-theme="dark"] .settings-account-card,
+html[data-theme="dark"] .settings-model-card,
+html[data-theme="dark"] .subscription-card,
+html[data-theme="dark"] .admin-summary,
+html[data-theme="dark"] .admin-user-card {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f5f7fa;
+}
+
+/* Settings card text */
+html[data-theme="dark"] .settings-account-card strong,
+html[data-theme="dark"] .settings-account-card span,
+html[data-theme="dark"] .settings-model-card strong,
+html[data-theme="dark"] .subscription-card strong,
+html[data-theme="dark"] .subscription-card span,
+html[data-theme="dark"] .admin-user-card strong,
+html[data-theme="dark"] .admin-user-card span {
+  color: #f5f7fa;
+}
+
+/* Model selector */
+html[data-theme="dark"] .model-option {
+  background: rgba(255, 255, 255, 0.035);
+  color: #f5f7fa;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .model-option:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+html[data-theme="dark"] .model-option-selected {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+html[data-theme="dark"] .model-option-title-row strong,
+html[data-theme="dark"] .model-option-description,
+html[data-theme="dark"] .model-option-detail,
+html[data-theme="dark"] .model-option-state {
+  color: #f5f7fa;
+}
+
+/* Appearance selector */
+html[data-theme="dark"] .theme-option {
+  background: rgba(255, 255, 255, 0.035);
+  color: #f5f7fa;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .theme-option:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+html[data-theme="dark"] .theme-option-selected {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+html[data-theme="dark"] .theme-option strong,
+html[data-theme="dark"] .theme-option small {
+  color: #f5f7fa;
+}
+
+/* Subscription plans */
+html[data-theme="dark"] .plan-card {
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f5f7fa;
+}
+
+html[data-theme="dark"] .plan-card-active {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+html[data-theme="dark"] .plan-name,
+html[data-theme="dark"] .plan-model,
+html[data-theme="dark"] .plan-price,
+html[data-theme="dark"] .plan-description,
+html[data-theme="dark"] .plan-features {
+  color: #f5f7fa;
+}
+
+/* Promo input */
+html[data-theme="dark"] .promo-input {
+  background: rgba(255, 255, 255, 0.055);
+  color: #f5f7fa;
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+html[data-theme="dark"] .promo-input::placeholder {
+  color: rgba(245, 247, 250, 0.45);
+}
+
+/* Checkout inputs */
+html[data-theme="dark"] .checkout-field input {
+  background: rgba(255, 255, 255, 0.055);
+  color: #f5f7fa;
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+html[data-theme="dark"] .checkout-field input::placeholder {
+  color: rgba(245, 247, 250, 0.45);
+}
+
+html[data-theme="dark"] .checkout-field label {
+  color: #f5f7fa;
+}
+
+/* Rename/delete dialog */
+html[data-theme="dark"] .dialog-input {
+  background: rgba(255, 255, 255, 0.055);
+  color: #f5f7fa;
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+html[data-theme="dark"] .dialog-input::placeholder {
+  color: rgba(245, 247, 250, 0.45);
+}
+
+/* Assistant messages */
+html[data-theme="dark"] .assistant-message {
+  color: #f5f7fa;
+}
+
+/* Make markdown content inherit dark text */
+html[data-theme="dark"] .assistant-message p,
+html[data-theme="dark"] .assistant-message li,
+html[data-theme="dark"] .assistant-message strong,
+html[data-theme="dark"] .assistant-message em,
+html[data-theme="dark"] .assistant-message h1,
+html[data-theme="dark"] .assistant-message h2,
+html[data-theme="dark"] .assistant-message h3 {
+  color: inherit;
+}
+
+/* Code blocks */
+html[data-theme="dark"] .assistant-message pre,
+html[data-theme="dark"] .assistant-message code {
+  background: rgba(0, 0, 0, 0.35);
+  color: #f5f7fa;
+}
+
+/* Thinking indicator */
+html[data-theme="dark"] .thinking-text {
+  color: rgba(245, 247, 250, 0.7);
+}
+
+/* Remove accidental white borders/backgrounds from common elements */
+html[data-theme="dark"] button,
+html[data-theme="dark"] input,
+html[data-theme="dark"] textarea {
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+html[data-theme="dark"] button {
+  color: inherit;
+}
+
+/* Keep send button visually separate */
+html[data-theme="dark"] .send-button-active {
+  color: white;
+}
+
+/* Scrollbars */
+html[data-theme="dark"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
